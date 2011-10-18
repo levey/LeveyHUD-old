@@ -1,0 +1,26 @@
+//
+//  ActivityView.h
+//  Handbook
+//
+//  Created by Samson on 9/15/09.
+//  Copyright 2009 InfoThinker. All rights reserved.
+//
+@interface LoadingView : UIView {
+@private
+	UIActivityIndicatorView * activityIndicator;
+	UILabel * label;
+}
+
+@property (nonatomic, retain) NSString * text;
+
+- (void) startAnimating;
+- (void) stopAnimating;
+
+- (void)hide;
+- (void)delayHideWithText:(NSString *)str animation:(BOOL)yesOrNo;
+- (void)hideWithZoomOutEffect;
+
++ (LoadingView *)showZoomInLoadingText:(NSString *)text inView:(UIView *)v;
++ (LoadingView *)showLoadingText:(NSString *)text inView:(UIView *)v;
+@end
+

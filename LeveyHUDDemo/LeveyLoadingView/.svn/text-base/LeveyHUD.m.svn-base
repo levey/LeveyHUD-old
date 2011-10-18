@@ -1,0 +1,197 @@
+//
+//  ActivityView.m
+//  Handbook
+//
+//  Created by Samson on 9/15/09.
+//  Copyright 2009 InfoThinker. All rights reserved.
+//
+
+
+#import "LoadingView.h"
+
+@interface LoadingView ()
+
+- (void) drawRoundedRect:(CGRect)rect inContext:(CGContextRef)context withSize:(CGSize)size;
+
+@end
+
+@implementation LoadingView
+
+- (id) initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+	if (self) {
+		self.backgroundColor = [UIColor clearColor];
+		activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+		label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 130, 50)];
+		label.backgroundColor = [UIColor clearColor];
+		label.textAlignment = UITextAlignmentCenter;
+		label.adjustsFontSizeToFitWidth = YES;
+		label.textColor = [UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:0.9];
+		[self addSubview:activityIndicator];
+		[self addSubview:label];		
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	[activityIndicator release];
+	[label release];
+	[super dealloc];
+}
+
+- (NSString*) text
+{
+	return label.text;
+}
+
+- (void) setText:(NSString*)text
+{
+	label.text = text;
+}
+
+- (void)startAnimating
+{
+	[activityIndicator startAnimating];
+}
+
+- (void)stopAnimating
+{
+	[activityIndicator stopAnimating];
+}
+#pragma mark -
+#pragma mark Make LoadingView Hide
+- (void)hide
+{   
+    self.superview.userInteractionEnabled = YES;
+    [self stopAnimating];
+    [self removeFromSuperview];
+}
+
+- (void)delayHideWithText:(NSString *)str animation:(BOOL)yesOrNo
+{
+    self.text = str;
+    [self stopAnimating];
+    UIImageView *imgv = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"done.png"]];
+    imgv.frame = CGRectMake(0.0f, 0.0f, 36.0f, 36.0f);
+    imgv.center = activityIndicator.center;
+    [self addSubview:imgv];
+    [imgv release];
+    SEL selector = yesOrNo ? @selector(hideWithZoomOutEffect) : @selector(hide);
+    [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:selector userInfo:nil repeats:NO];
+}
+
+- (void)hideWithZoomOutEffect
+{
+    [UIView animateWithDuration:.3f animations:^{
+        self.transform = CGAffineTransformMakeScale(1.8f,1.8f);
+        self.alpha = 0.0f;
+    } completion:^(BOOL finished){
+        if (finished) {
+            [self hide];
+        }
+    }];
+}
+
+#pragma mark -
+#pragma mark LoadingView Creation
++ (LoadingView *) showLoadingText:(NSString *)text inView:(UIView *)v
+{
+	LoadingView * view = [[[LoadingView alloc] initWithFrame:v.bounds] autorelease];
+	view.text = text;
+	[v addSubview:view];
+	[view startAnimating];
+    
+	return view;
+}
+
++ (LoadingView *)showZoomInLoadingText:(NSString *)text inView:(UIView *)v
+{
+    v.userInteractionEnabled = NO;
+    LoadingView * view = [[[LoadingView alloc] initWithFrame:v.bounds] autorelease];
+    view.transform = CGAffineTransformMakeScale(1.8f,1.8f);
+    view.alpha = 0.0f;
+    view.backgroundColor = [UIColor clearColor];
+	view.text = text;
+	[v addSubview:view];
+    
+    [UIView animateWithDuration:.3f animations:^{
+        view.alpha = 1.0f;
+        view.transform = CGAffineTransformIdentity;
+    }completion:^(BOOL finished){
+        if (finished) {
+            [view startAnimating];
+        }
+    }];
+    return view;
+}
+
+#pragma mark -
+#pragma mark Layout
+- (void) layoutSubviews
+{
+	[super layoutSubviews];
+	activityIndicator.center = CGPointMake(self.bounds.size.width / 2, self.bounds.size.height / 2);
+	label.center = CGPointMake(self.bounds.size.width / 2, self.bounds.size.height / 2 + 35);
+}
+
+
+- (void) drawRect:(CGRect)rect
+{
+	CGFloat width = 120.0;
+	CGRect centerRect = CGRectMake((rect.origin.x + rect.size.width - width)/2,
+								   (rect.origin.y + rect.size.height - width)/2,
+								   width,
+								   width);
+	
+	CGContextRef context = UIGraphicsGetCurrentContext();
+
+	[self drawRoundedRect:centerRect inContext:context withSize:CGSizeMake(10,10)];
+}
+
+-(void) drawRoundedRect:(CGRect)rect inContext:(CGContextRef)context withSize:(CGSize)size
+{
+	CGFloat ovalWidth = size.width;
+	CGFloat ovalHeight = size.height;
+    if (ovalWidth == 0 || ovalHeight == 0)
+	{
+        CGContextAddRect(context, rect);
+        return;
+    }
+    CGContextTranslateCTM (context, CGRectGetMinX(rect), CGRectGetMinY(rect));
+    CGContextScaleCTM (context, ovalWidth, ovalHeight);
+    CGFloat fw = CGRectGetWidth(rect)/ovalWidth;
+    CGFloat fh = CGRectGetHeight(rect)/ovalHeight;
+
+	CGMutablePathRef path = CGPathCreateMutable();
+	CGPathMoveToPoint(path, NULL, fw, fh/2);
+	CGPathAddArcToPoint(path, NULL, fw, fh, fw/2, fh, 1);
+	CGPathAddArcToPoint(path, NULL, 0, fh, 0, fh/2, 1);
+	CGPathAddArcToPoint(path, NULL, 0, 0, fw/2, 0, 1);
+	CGPathAddArcToPoint(path, NULL, fw, 0, fw, fh/2, 1);
+	CGPathCloseSubpath(path);
+	
+	CGContextAddPath(context, path);
+	
+	CGContextClip(context);
+	CGFloat colors[] =
+	{
+		80.0 / 255.0, 80.0 / 255.0, 80.0 / 255.0, 0.80,
+		0.0 / 255.0,  0.0 / 255.0, 0.0 / 255.0, 0.80,
+	};
+	CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
+	CGGradientRef gradient = CGGradientCreateWithColorComponents(rgb, colors, NULL, sizeof(colors)/(sizeof(colors[0])*4));
+	CGColorSpaceRelease(rgb);
+	CGPoint start = CGPointMake(0, 0);
+	CGPoint end = CGPointMake(0, fh);
+	CGContextDrawLinearGradient(context, gradient, start, end, 0);
+	CFRelease(gradient);
+	
+	CGContextAddPath(context, path);
+	CGPathRelease(path);
+	CGContextSetRGBStrokeColor(context, 1.00, 1.00, 1.00, 0.70);
+	CGContextSetLineWidth(context, .25);
+	CGContextStrokePath(context);
+}
+
+@end
